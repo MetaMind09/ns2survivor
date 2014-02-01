@@ -62,3 +62,56 @@ function AlienTeam:Update(timePassed)
     //UpdateCystConstruction(self, timePassed)
     
 end
+
+local function UpdateAlienSpectators(self)
+
+    if self.timeLastSpectatorUpdate == nil then
+        self.timeLastSpectatorUpdate = Shared.GetTime() - 1
+    end
+
+    if self.timeLastSpectatorUpdate + 1 <= Shared.GetTime() then
+
+        local alienSpectators = self:GetSortedRespawnQueue()
+        local enemyTeamPosition = GetCriticalHivePosition(self)
+        
+        for i = 1, #alienSpectators do
+        
+            local alienSpectator = alienSpectators[i]
+            // Do not spawn players waiting in the auto team balance queue.
+            if alienSpectator:isa("AlienSpectator") and not alienSpectator:GetIsWaitingForTeamBalance() then
+            
+                // Consider min death time.
+                if alienSpectator:GetRespawnQueueEntryTime() + kAlienSpawnTime < Shared.GetTime() then
+                
+                  //let aliens spawn without eggs (ISSUE #2)
+                  GetGamerules():RespawnPlayer(alienSpectator)
+
+                  /*
+                    local egg = nil
+                    if alienSpectator.GetHostEgg then
+                        egg = alienSpectator:GetHostEgg()
+                    end
+                    
+                    // Player has no egg assigned, check for free egg.
+                    if egg == nil then
+                    
+                        local success = AssignPlayerToEgg(self, alienSpectator, enemyTeamPosition)
+                        
+                        // We have no eggs currently, makes no sense to check for every spectator now.
+                        if not success then
+                            break
+                        end
+                        
+                    end */
+                    
+                end
+                
+            end
+            
+        end
+    
+        self.timeLastSpectatorUpdate = Shared.GetTime()
+
+    end
+    
+end
