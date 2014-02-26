@@ -1,41 +1,25 @@
-//
-//      Survivor_Player_Server.lua
-//
-//      created by:  MetaMind09    (Simon Hiller_ andante09@gmx.de)
-//
+function Player:OnUpdatePlayer(deltaTime)
 
-
-
-local function UpdateChangeToSpectator(self)
-
-    if not self:GetIsAlive() and not self:isa("Spectator") then
+    UpdateChangeToSpectator(self)
     
-        local time = Shared.GetTime()
-        if self.timeOfDeath ~= nil and (time - self.timeOfDeath > kFadeToBlackTime) then
-        
-            // Destroy the existing player and create a spectator in their place (but only if it has an owner, ie not a body left behind by Phantom use)
-            local owner = Server.GetOwner(self)
-            if owner then
-            
-                // Queue up the spectator for respawn.
-
-                //let a dead players spawn as alien
-                    //local spectator = self:Replace(self:GetDeathMapName())                
-                local spectator = self:Replace(self:GetDeathMapName(), kAlienTeamType)                 
-                //Let Marine spawn without IP and Aliens without eggs (ISSUE #2)
-                    //spectator:GetTeam():PutPlayerInRespawnQueue(spectator)
-                spectator:GetTeam():ReplaceRespawnPlayer(spectator)  
-
-            end
-            
-        end
-        
+    local gamerules = GetGamerules()
+    self.gameStarted = gamerules:GetGameStarted()
+    if self:GetTeamNumber() == kTeam1Index or self:GetTeamNumber() == kTeam2Index then
+        self.countingDown = gamerules:GetCountingDown()
+    else
+        self.countingDown = false
     end
     
-end
-
-
-function Player:ReplaceRespawn()
-    return self:GetTeam():ReplaceRespawnPlayer(self, nil, nil)
-end
-
+//Set Marine Weapon OnFlames
+    
+    if self:GetIsAlive() and self:GetTeamNumber() == kTeam1Index then   
+        if (self.Kills_in_row and self.Kills_in_row >= 3) then
+            self:GetActiveWeapon():SetOnFire(3)
+        elseif (self.Kills_in_row and self.Kills_in_row >= 2) then
+            self:GetActiveWeapon():SetOnFire(2)
+        elseif (self.Kills_in_row and self.Kills_in_row >= 1) then
+            self:GetActiveWeapon():SetOnFire(1)
+        else
+            //self:GetActiveWeapon():SetOnFire(1)
+        end        
+    end

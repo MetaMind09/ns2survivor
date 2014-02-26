@@ -4,8 +4,20 @@
 //    Created by:   Lassi lassi@heisl.org
 //
 
-// RandomizeAliensServer.lua
+//currently there are no server hooks so we don't need to load the framework here
+//TODO: use it or remove it
 
+////load the class hooking utilities by fsfod
+//BEFORE loading the base NS2 server
+//Script.Load("lua/PreLoadMod.lua")
+//Script.Load("lua/PathUtil.lua")
+//Script.Load("lua/ClassHooker.lua")
+//Script.Load("lua/LoadTracker.lua")
+//
+////load mixin & player hooks
+//Script.Load("lua/Survivor_PlayerHooks.lua")
+
+// RandomizeAliensServer.lua
 Script.Load("lua/Server.lua")
 Print "Server VM"
 //load the shared script
@@ -15,39 +27,15 @@ Script.Load("lua/Survivor_Team.lua")
 Script.Load("lua/Survivor_AlienTeam.lua")
 Script.Load("lua/Survivor_MarineTeam.lua")
 Script.Load("lua/Survivor_Skulk_Server.lua")
+Script.Load("lua/Survivor_Player_Server.lua")
+Script.Load("lua/Weapons/Survivor_Weapon.lua")
+Script.Load("lua/Survivor_GUIScoreboard.lua")
+Script.Load("lua/Survivor_Scoreboard.lua")
 
-
-kHumanPointsPerSec = 1
-
-
-    local totalserverupdatetime = 0.0  
- 
-    local function h_UpdateServer(deltaTime)
-        totalserverupdatetime = totalserverupdatetime + deltaTime        
-        if((totalserverupdatetime % 1) < deltaTime) then//1 sec passed in this delta   
-        
-            //Add Score for Humans (ISSUE #1)
-            if GetGamerules():GetGameState() == kGameState.Started then
-                local h_team = GetGamerules():GetTeam(kTeam1Index)             
-                playerlist = h_team:GetPlayers()
-                table.foreach(playerlist,
-                    function(_index)
-                        if(playerlist[_index]:GetIsAlive()) then 
-                            playerlist[_index]:AddScore(kHumanPointsPerSec,0)                             
-                        end
-                    end
-                )
-            end            
-            
-        end //end sec.
-        
-    end
-    Event.Hook("UpdateServer", h_UpdateServer)
-    
-
-
-
-
+//mixin overrides
+Script.Load("lua/Survivor_PointGiverMixin.lua")
+Script.Load("lua/Survivor_ScoringMixin.lua")
+Script.Load("lua/OnFlamesMixin.lua")
 
 local function postServerMsg(player, message)
     local locationId = -1

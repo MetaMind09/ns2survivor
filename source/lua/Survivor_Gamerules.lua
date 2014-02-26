@@ -11,12 +11,21 @@ kRoundTime = 600
 //do not send the no commander message the entire round
 kSendNoCommanderMessageRate = kRoundTime + 1
 
+//increase the points given for constructing the power node
+kBuildPointValue = 10
+//number of seconds a marine has to survive to score one point
+kSurvivalSecondsPerPoint = 5
+//dont give away PRes for frags
+kPersonalResPerKill = 0
+
 //set friendly fire factor to 100%
 kFriendlyFireScalar = 1
 
 survivalStartTime = nil
 surviviorGamePhase = kSurvivorGamePhase.NotStarted
 //gHUDMapEnabled = false
+
+local kTimeToReadyRoom = 8
 
 if (Server) then
     //if the survivor pahse of the the game has started already players have to wait 
@@ -53,21 +62,19 @@ if (Server) then
         //check if the killed entity was a marine
         if (targetEntity:isa("Player")) then
             if (targetEntity:GetTeamNumber() == 1) then
+
                 //If the marine was the first one to get killed goto phase two:Survive!
                 //this disables friendly fire
                 if (surviviorGamePhase == kSurvivorGamePhase.FragYourNeighbor) then
-                    //move on to normal game (phase 2)
-                    self:SetSurvivorGamePhase(kSurvivorGamePhase.Survival)
+                  //move on to normal game (phase 2)
+                  self:SetSurvivorGamePhase(kSurvivorGamePhase.Survival)
+
+								elseif (surviviorGamePhase == kSurvivorGamePhase.Survival) then
+								  //send "Player has muted" message to clients
+				          SendSurvivorTeamMessage(self.team1, kSurvivorTeamMessageTypes.PlayerMutated, targetEntity:GetId())
+
                 end
                 
-                //TODO: award some points
-                //disabled for now - borks on self kill 
-                --if(doer:isa("Player"))then
-                --    doer:AddScore(10,0)
-                --end
-            
-                //move player to alien team
-                success, newEntity = NS2Gamerules.JoinTeam(self, targetEntity, 2)
             end
         end
     end
@@ -99,6 +106,8 @@ if (Server) then
     end
     
     function NS2Gamerules:OnStartSurvivalPhase()
+			  //Notify the players that it's time to survive
+				SendSurvivorTeamMessage(self.team1, kSurvivorTeamMessageTypes.SurvivalStarted)
         //start round timer
         survivalStartTime = Shared.GetTime()
         //send the survival phase starting timestamp to the clients
@@ -243,6 +252,32 @@ if (Server) then
 				//call original function
 				ns2OnUpdate(self, timePassed)
 		end
+	
+		//since this function overrides the original implementation we can't change
+		//the name although we dont update to ready room at all...
+    function NS2Gamerules:UpdateToReadyRoom()
+
+        local state = self:GetGameState()
+        if(state == kGameState.Team1Won or state == kGameState.Team2Won or state == kGameState.Draw) then
+        
+            if self.timeSinceGameStateChanged >= kTimeToReadyRoom then
+            
+                // since we want the game to restart immediatly 
+								// we move all the player straigt back into the marine team
+                local function SetReadyRoomTeam(player)
+                    player:SetCameraDistance(0)
+                    self:JoinTeam(player, kTeam1Index)
+                end
+                Server.ForAllPlayers(SetReadyRoomTeam)
+
+                // Spawn them there and reset teams
+                self:ResetGame()
+
+            end
+            
+        end
+        
+    end
 		
    
 end
